@@ -73,9 +73,12 @@ FROM base AS code-server
 
 LABEL org.opencontainers.image.description="Dagster code server"
 
-# Must match both the `module_name` your Terraform code_locations entry
-# declares and the `location_name` in your workspace.yaml. Override at build
-# time instead of editing this file:
+# Should match the `module_name` your Terraform code_locations entry declares
+# (NOT the location key — that's a different string; see kit/README.md). Note
+# that on Cloud Run this default is cosmetic: the Terraform module always
+# overrides the code-server command with its own --module-name, so this
+# CMD/ARG only matters when running the image outside the module (local dev).
+# Override at build time instead of editing this file:
 #   docker build --target code-server \
 #     --build-arg DAGSTER_MODULE_NAME=my_pipeline.definitions ...
 ARG DAGSTER_MODULE_NAME=my_pipeline.definitions
