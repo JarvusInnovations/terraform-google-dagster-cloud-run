@@ -1,5 +1,5 @@
 ---
-status: planned
+status: in-progress
 depends: [import-module, deployment-kit]
 specs:
   - specs/architecture.md
