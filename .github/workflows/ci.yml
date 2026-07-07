@@ -1,0 +1,68 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+jobs:
+  validate:
+    name: Format & Validate
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: opentofu/setup-opentofu@v2
+
+      - name: Format check
+        run: tofu fmt -check -recursive
+
+      - name: Validate module
+        run: |
+          tofu init -backend=false -input=false
+          tofu validate
+
+      - name: Validate examples
+        run: |
+          for dir in examples/*/; do
+            echo "=== $dir"
+            (cd "$dir" && tofu init -backend=false -input=false && tofu validate)
+          done
+
+  plan-checks:
+    name: Offline plan checks
+    runs-on: ubuntu-latest
+    env:
+      # Fake token: create-only plans never call GCP APIs, this just stops the
+      # provider from hunting for real application-default credentials.
+      GOOGLE_OAUTH_ACCESS_TOKEN: ci-fake-token
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: opentofu/setup-opentofu@v2
+
+      - name: Consolidated single-location plan succeeds
+        working-directory: examples/consolidated-starter
+        run: |
+          tofu init -backend=false -input=false
+          tofu plan -input=false \
+            -var project_id=example-project \
+            -var webserver_image=us-docker.pkg.dev/EXAMPLE/EXAMPLE/dagster-webserver:latest \
+            -var daemon_image=us-docker.pkg.dev/EXAMPLE/EXAMPLE/dagster-daemon:latest
+
+      - name: Consolidated rejects two code locations (precondition)
+        working-directory: examples/consolidated-starter
+        run: |
+          set +e
+          output=$(tofu plan -input=false -var-file=two-locations.tfvars 2>&1)
+          status=$?
+          set -e
+          echo "$output"
+          if [ $status -eq 0 ]; then
+            echo "ERROR: plan succeeded but should have failed the single-location precondition" >&2
+            exit 1
+          fi
+          echo "$output" | grep -q 'supports exactly one code location' || {
+            echo "ERROR: plan failed for a different reason than the precondition" >&2
+            exit 1
+          }
