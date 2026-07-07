@@ -1,6 +1,8 @@
 ---
 status: in-progress
 depends: [import-module, deployment-kit]
+awaits:
+  - "maintainer runbook execution — tag/release publication and Terraform Registry org sign-in are human-gated acts (permission gate + browser OAuth); see Approach runbook"
 specs:
   - specs/architecture.md
 issues: []
@@ -23,15 +25,22 @@ Out of scope: consumer migrations (downstream plans), announcements
 
 ## Approach
 
-1. Pre-publish sweep: no secrets/keys/consumer identifiers in tree or history;
-   LICENSE, description, topics set.
-2. Connect the repo to the Terraform Registry (org sign-in, publish flow) and tag
-   `v0.1.0`.
-3. Verify consumption from a scratch directory:
+1. ~~Pre-publish sweep~~ DONE 2026-07-07: no consumer identifiers or secret
+   literals in tree or full history (27 commits, all fresh); LICENSE and
+   description in place.
+2. ~~README~~ DONE (landed with import-module/on-demand): registry-source usage
+   snippet, mode ladder with costs, beta-provider note, support-scope statement.
+3. **Maintainer runbook** (human-gated — publication acts):
+   a. `git tag -a v0.1.0 -m "v0.1.0 — initial pre-release" && git push origin v0.1.0`
+   b. Optionally `gh release create v0.1.0 --title v0.1.0 --notes-file <notes>`
+      (release notes draft in the session log; a plain tag is enough for the
+      registry).
+   c. registry.terraform.io → Sign in with GitHub → Publish → Module → authorize
+      the JarvusInnovations org for the registry GitHub App (org admin) → select
+      `terraform-google-dagster-cloud-run`. The registry auto-detects tags.
+4. Verify consumption from a scratch directory:
    `module "dagster" { source = "JarvusInnovations/dagster-cloud-run/google", version = "0.1.0" }`
-   → `tofu init && tofu validate`.
-4. README: registry-source usage snippet, mode ladder with costs, beta-provider
-   caveat, support-scope statement (examples are the contract).
+   → `tofu init` resolves.
 
 ## Validation
 
