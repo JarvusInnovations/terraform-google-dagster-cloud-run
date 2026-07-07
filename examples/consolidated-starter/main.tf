@@ -2,6 +2,10 @@
 # Webserver + daemon + code server run as three containers in one always-on
 # instance (~1 vCPU / 2.5Gi by default). Run workers launch per-run as Cloud
 # Run Jobs. Lowest Dagster-native cost floor.
+#
+# Set deployment_mode = "on-demand" for the scale-to-zero variant (same
+# topology, min=0): ~$0/mo Cloud Run when idle, cold start on the next UI
+# visit, schedules/sensors only fire while awake.
 
 terraform {
   required_version = ">= 1.6.0"
@@ -52,7 +56,7 @@ module "dagster" {
   region                    = var.region
   cloud_sql_connection_name = google_sql_database_instance.dagster.connection_name
 
-  deployment_mode = "consolidated"
+  deployment_mode = var.deployment_mode
 
   webserver_image = var.webserver_image
   daemon_image    = var.daemon_image

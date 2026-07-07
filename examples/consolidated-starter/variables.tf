@@ -44,3 +44,9 @@ variable "code_locations" {
     }
   }
 }
+
+variable "deployment_mode" {
+  description = "\"consolidated\" (always on) or \"on-demand\" (scale to zero when idle; demos)"
+  type        = string
+  default     = "consolidated"
+}

@@ -1,5 +1,6 @@
 ---
-status: in-progress
+status: done
+pr: 3
 depends: [import-module]
 specs:
   - specs/module-interface.md
@@ -45,11 +46,11 @@ follow-up); Cloud SQL stop/start scheduling.
 
 ## Validation
 
-- [ ] Offline plan of `consolidated-starter` with `deployment_mode = "on-demand"` succeeds and differs from consolidated only in `min_instance_count`
-- [ ] Two-location fixture fails the precondition in on-demand mode too
-- [ ] `tofu validate` passes at root and in all examples
-- [ ] README documents the mode, its trade-offs, and its ~$0 idle floor
-- [ ] Upstream PR #70 closed with a pointer to the port
+- [x] Offline plan of `consolidated-starter` with `deployment_mode = "on-demand"` succeeds and differs from consolidated only in `min_instance_count`
+- [x] Two-location fixture fails the precondition in on-demand mode too
+- [x] `tofu validate` passes at root and in all examples
+- [x] README documents the mode, its trade-offs, and its ~$0 idle floor
+- [x] Upstream PR #70 closed with a pointer to the port
 
 ## Risks / unknowns
 
@@ -58,8 +59,16 @@ follow-up); Cloud SQL stop/start scheduling.
 
 ## Notes
 
-(Populated at closeout.)
+- Verified the plan-diff criterion precisely: consolidated vs on-demand offline
+  plans differ in exactly one line (`min_instance_count = 1` vs `0`).
+- Port delta: the single-location precondition error message now interpolates
+  `var.deployment_mode` — the hardcoded "consolidated" wording was misleading
+  when the precondition fired in on-demand mode.
+- Upstream PR #70 closed unmerged with a pointer to this port; the archiver
+  never carries the mode directly and picks it up at migration.
 
 ## Follow-ups
 
-(Populated at closeout.)
+- Tracked as: in-process code loading (no separate code-server container) as a
+  cold-start optimization for on-demand — noted as a possible future spec, not
+  planned.
