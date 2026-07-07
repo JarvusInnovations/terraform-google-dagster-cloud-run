@@ -50,19 +50,31 @@ jobs:
             -var webserver_image=us-docker.pkg.dev/EXAMPLE/EXAMPLE/dagster-webserver:latest \
             -var daemon_image=us-docker.pkg.dev/EXAMPLE/EXAMPLE/dagster-daemon:latest
 
-      - name: Consolidated rejects two code locations (precondition)
+      - name: On-demand single-location plan succeeds
         working-directory: examples/consolidated-starter
         run: |
-          set +e
-          output=$(tofu plan -input=false -var-file=two-locations.tfvars 2>&1)
-          status=$?
-          set -e
-          echo "$output"
-          if [ $status -eq 0 ]; then
-            echo "ERROR: plan succeeded but should have failed the single-location precondition" >&2
-            exit 1
-          fi
-          echo "$output" | grep -q 'supports exactly one code location' || {
-            echo "ERROR: plan failed for a different reason than the precondition" >&2
-            exit 1
-          }
+          tofu plan -input=false \
+            -var deployment_mode=on-demand \
+            -var project_id=example-project \
+            -var webserver_image=us-docker.pkg.dev/EXAMPLE/EXAMPLE/dagster-webserver:latest \
+            -var daemon_image=us-docker.pkg.dev/EXAMPLE/EXAMPLE/dagster-daemon:latest
+
+      - name: Single-instance modes reject two code locations (precondition)
+        working-directory: examples/consolidated-starter
+        run: |
+          for mode in consolidated on-demand; do
+            echo "=== deployment_mode=$mode"
+            set +e
+            output=$(tofu plan -input=false -var deployment_mode=$mode -var-file=two-locations.tfvars 2>&1)
+            status=$?
+            set -e
+            echo "$output" | tail -20
+            if [ $status -eq 0 ]; then
+              echo "ERROR: $mode plan succeeded but should have failed the single-location precondition" >&2
+              exit 1
+            fi
+            echo "$output" | grep -q 'supports exactly one code location' || {
+              echo "ERROR: $mode plan failed for a different reason than the precondition" >&2
+              exit 1
+            }
+          done
