@@ -21,9 +21,12 @@ Consumes this repo's published interface (own `specs:` empty).
 
 ## Approach
 
-1. Same source-swap mechanics as [`migrate-gtfs-archiver`](migrate-gtfs-archiver.md),
-   plus mapping its bespoke variables (data bucket, API-credential secret vars, HMAC
-   usage) onto the generalized `secret_grants` / `bucket_grants` / HMAC flag.
+1. Start from the drafted migration on the local branch
+   `test/dagster-module-superset` in that repo (deferred from
+   [`reconcile-module-drift`](reconcile-module-drift.md)): root wiring onto the
+   generalized maps + `dagster_moved.tf` are already plan-verified (0/0/0 with
+   deployed image tags pinned). Swap the vendored module for the registry source
+   and delete the applied `moved` blocks.
 2. Confirm its private-ingress + path-prefix posture reproduces exactly (a proxying
    service in that stack depends on it).
 3. Propose the dormant-mode flip with the wake procedure documented for demo days;
@@ -32,6 +35,7 @@ Consumes this repo's published interface (own `specs:` empty).
 ## Validation
 
 - [ ] `tofu plan` after the swap: no-op or `moved`-explained
+- [ ] Image-management posture decided and recorded: Terraform-mediated deploys (pass current image vars at apply) vs. gcloud-mediated with documented plan noise (deferred from [`reconcile-module-drift`](reconcile-module-drift.md))
 - [ ] Proxied UI path (private ingress + path prefix) verified working post-migration
 - [ ] HMAC-dependent flows (S3-compatible GCS reads) verified working
 - [ ] Vendored module deleted in the same PR

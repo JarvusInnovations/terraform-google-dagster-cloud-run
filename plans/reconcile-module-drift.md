@@ -1,5 +1,6 @@
 ---
-status: in-progress
+status: done
+pr: 69
 depends: [land-pr-67]
 specs: []
 issues: []
@@ -39,11 +40,11 @@ The ingress-posture, code-location, and generalization rules of
 
 ## Validation
 
-- [ ] Archiver `tofu plan` with the superset module: no-op or fully explained by `moved` blocks
-- [ ] Second deployment's root-module diff drafted and its `tofu plan` no-op or moved-only (run by a maintainer with access)
-- [ ] A sweep for consumer-domain identifiers (feed, bucket, and secret names from both origin deployments) finds no variable/resource names in the module (comments exempt)
-- [ ] HMAC keys are opt-in and off by default; archiver plan unaffected by the flag's existence
-- [ ] Private-ingress + path-prefix mode carried over with the second copy's behavior intact
+- [x] Archiver `tofu plan` with the superset module: no-op or fully explained by `moved` blocks
+- [x] Second deployment's root-module diff drafted and its `tofu plan` no-op or moved-only (run by a maintainer with access)
+- [x] A sweep for consumer-domain identifiers (feed, bucket, and secret names from both origin deployments) finds no variable/resource names in the module (comments exempt)
+- [x] HMAC keys are opt-in and off by default; archiver plan unaffected by the flag's existence
+- [x] Private-ingress + path-prefix mode carried over with the second copy's behavior intact
 
 ## Risks / unknowns
 
@@ -55,8 +56,30 @@ The ingress-posture, code-location, and generalization rules of
 
 ## Notes
 
-(Populated at closeout.)
+- Verification was stronger than planned: the second deployment's migration was
+  not just drafted but **plan-verified against its live state** — with deployed
+  image tags pinned, `tofu plan` = 0 add / 0 change / 0 destroy with all ten
+  state moves resolving cleanly. The draft lives on the local branch
+  `test/dagster-module-superset` in that repo (not pushed).
+- **launch_stage lesson**: Cloud Run Worker Pools and IAP are GA; Google
+  auto-promoted deployed resources, so forcing BETA in config produced perpetual
+  GA→BETA plan diffs. The superset drops BETA forcing (adopted from the second
+  copy's daemon fix, extended to webserver/consolidated).
+- **Fleet image-management split**: the archiver deploys images *through*
+  `tofu apply` (release CI passes image vars); the second deployment moves its
+  Dagster images via gcloud outside Terraform, so its local plans always show
+  image drift vs. stale variable defaults. Its migration must pick a side.
+- Consumer-side `moved` blocks (root `dagster_moved.tf`) are the churn-free
+  rename technique while the module is vendored (same package); they MUST be
+  deleted before/when the source switches to the registry (cross-package moves
+  are rejected), and only after the moves have been applied once.
+- Reviewer follow-ups taken: `path_prefix` format validation, `extra_env`
+  reserved-key validation, `custom_domain` description accuracy.
 
 ## Follow-ups
 
-(Populated at closeout.)
+- Deferred to [`migrate-second-consumer`](migrate-second-consumer.md) — apply the
+  drafted migration (local branch `test/dagster-module-superset` in that repo),
+  and decide its image-management posture: pass current image vars at apply
+  (adopting the Terraform-mediated pattern) or keep gcloud-mediated deploys and
+  document the local-plan image-drift noise.
