@@ -5,3 +5,6 @@
 !*.auto.tfvars.example
 crash.log
 .terraform.lock.hcl
+
+# CI negative-test fixture (contains only EXAMPLE placeholders)
+!examples/consolidated-starter/two-locations.tfvars
