@@ -39,6 +39,10 @@ Out of scope: `dormant` mode ([`dormant-mode`](dormant-mode.md)), kit templates
    credentials exist.
 4. Module README: component table, mode ladder with cost floors and break-evens,
    ingress postures, the workspace coupling rule, beta-provider caveat.
+5. Negative-case check for the consolidated single-location precondition, and a
+   sandbox apply of `consolidated-starter` to apply-verify fractional CPU + probes
+   (deferred from [`land-pr-67`](land-pr-67.md) — Cloud Run enforces these at
+   apply, never at plan/validate).
 
 ## Validation
 
@@ -47,6 +51,8 @@ Out of scope: `dormant` mode ([`dormant-mode`](dormant-mode.md)), kit templates
 - [ ] Repo satisfies registry structural requirements (root module, LICENSE, README, `terraform-google-*` name)
 - [ ] README documents every `deployment_mode` with its cost floor and break-even
 - [ ] No consumer-domain identifiers anywhere in module code or examples
+- [ ] Consolidated mode with two code locations fails at plan with the precondition message (deferred from [`land-pr-67`](land-pr-67.md))
+- [ ] `consolidated-starter` example apply-verified in a sandbox project (fractional per-container CPU + startup probes accepted by the Cloud Run API) (deferred from [`land-pr-67`](land-pr-67.md))
 
 ## Risks / unknowns
 

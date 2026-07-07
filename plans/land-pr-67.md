@@ -1,5 +1,6 @@
 ---
-status: in-progress
+status: done
+pr: 67
 depends: []
 specs: []
 issues: []
@@ -49,12 +50,12 @@ hold this repo's tree to it yet).
 
 ## Validation
 
-- [ ] Consolidated code-server startup probe satisfies `timeout_seconds <= period_seconds`
+- [x] Consolidated code-server startup probe satisfies `timeout_seconds <= period_seconds`
 - [ ] `tofu plan` with two `code_locations` entries in consolidated mode fails with the precondition message
-- [ ] All doc cross-references in the diff resolve; README documents `dagster_deployment_mode`
-- [ ] Full `tofu plan` against the live archiver stack shows no image downgrades
-- [ ] Break-even documented alongside the resized defaults
-- [ ] PR #67 merged with checks green
+- [x] All doc cross-references in the diff resolve; README documents `dagster_deployment_mode`
+- [x] Full `tofu plan` against the live archiver stack shows no image downgrades
+- [x] Break-even documented alongside the resized defaults
+- [x] PR #67 merged with checks green
 
 ## Risks / unknowns
 
@@ -65,8 +66,28 @@ hold this repo's tree to it yet).
 
 ## Notes
 
-(Populated at closeout.)
+- The two-location precondition test box is unchecked: the precondition landed and
+  passes `tofu validate`, but the archiver root only defines one code location, so
+  the negative case was never exercised. Absorbed by `import-module` (example-level
+  check).
+- **Spec amendment mid-plan**: investigation falsified the "images move out-of-band"
+  principle — the archiver's release CI deploys *via* `tofu apply` with image vars
+  derived from the release tag, so `lifecycle ignore_changes` on images would break
+  deploys. Principle rewritten as "Terraform is the image mover". Drift source was a
+  stale local `terraform.tfvars` (0.4.13 vs deployed 0.8.2); pins reconciled.
+- Consolidated mode is validate- and plan-verified but **not apply-verified**:
+  fractional per-container CPU and probe acceptance are enforced by the Cloud Run
+  API at apply. First real apply happens via the examples (absorbed by
+  `import-module`) or a greenfield consumer.
+- Reviewer follow-ups taken: `startup_cpu_boost` on code-server + daemon sidecars,
+  daemon memory 1Gi (matches split), rollout transient-double-fire caveat documented.
+  Deliberately not taken: threading `deployment_mode` through `deploy.yaml`
+  (consolidated stays opt-in for this repo — it is cost-neutral there at current
+  sizing) and liveness probes on sidecars (matches split behavior).
 
 ## Follow-ups
 
-(Populated at closeout.)
+- Deferred to [`import-module`](import-module.md) — exercise the consolidated
+  single-location precondition negative case, and apply-verify consolidated mode
+  (fractional CPU + probes) via the `consolidated-starter` example in a sandbox
+  project.
