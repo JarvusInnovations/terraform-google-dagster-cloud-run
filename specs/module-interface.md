@@ -88,9 +88,12 @@ the rule. A mismatch fails loudly in docs/examples rather than silently in gRPC.
 
 ## Images
 
-Image variables set initial images only; the module ignores subsequent image drift on
-Services/Worker Pools/Jobs so infra applies never roll back app deploys
-([images move out-of-band](principles.md#images-move-out-of-band)).
+Image variables are ordinary, fully-managed inputs — no `lifecycle ignore_changes`
+on image fields, because consumers deploy releases *through* Terraform with image
+variables derived from the release tag
+([Terraform is the image mover](principles.md#terraform-is-the-image-mover--never-ignore-image-changes)).
+The README warns that any plan/apply must supply current image versions; stale local
+pins would roll back deployed images.
 
 ## Outputs
 

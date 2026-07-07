@@ -20,8 +20,9 @@ Requirements:
 - Dependencies installed with `uv` from the consumer's `pyproject.toml`/`uv.lock`.
 - The same image set works in every deployment mode — mode is a Terraform concern,
   never baked into the image.
-- Image tagging/pushing is the consumer's CI's job
-  ([images move out-of-band](principles.md#images-move-out-of-band)).
+- Image tagging/pushing is the consumer's CI's job; deploys flow through
+  `tofu apply` with release-derived image variables
+  ([Terraform is the image mover](principles.md#terraform-is-the-image-mover--never-ignore-image-changes)).
 
 ## `dagster.yaml` template
 

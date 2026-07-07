@@ -47,9 +47,14 @@ config. Shared infrastructure (Cloud SQL, buckets, service accounts, run workers
 identical across modes. A feature that only works in one mode must fail fast with a
 precondition, not degrade silently.
 
-## Images move out-of-band
+## Terraform is the image mover — never ignore image changes
 
-Image tags are owned by the consumer's CI/deploy pipeline, not by Terraform. The
-module ignores image drift on long-lived resources (`lifecycle ignore_changes`) so an
-infrastructure apply can never roll back an application deploy. The image variables
-set the *initial* image; day-2 image movement is the pipeline's job.
+Image tags move *through* Terraform: the proven origin pattern is a release CI job
+that runs `tofu apply` with image variables derived from the release tag. The module
+must therefore **never** put `lifecycle ignore_changes` on image fields — that would
+silently break every Terraform-mediated deploy, and `ignore_changes` cannot be made
+conditional, so one consumer's convenience would be another's outage. The corollary
+risk (an apply with stale image variables rolling back production) is a consumer
+workflow concern: the module README and examples must warn that plans/applies always
+supply current image versions, and consumers keep local tfvars pins in sync with
+their latest release.
