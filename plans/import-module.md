@@ -1,5 +1,6 @@
 ---
-status: in-progress
+status: done
+pr: 1
 depends: [reconcile-module-drift]
 specs:
   - specs/architecture.md
@@ -46,12 +47,12 @@ Out of scope: `dormant` mode ([`dormant-mode`](dormant-mode.md)), kit templates
 
 ## Validation
 
-- [ ] `tofu validate` passes at root and in each of the three examples
-- [ ] CI workflow runs fmt + validate on PR and is green
-- [ ] Repo satisfies registry structural requirements (root module, LICENSE, README, `terraform-google-*` name)
-- [ ] README documents every `deployment_mode` with its cost floor and break-even
-- [ ] No consumer-domain identifiers anywhere in module code or examples
-- [ ] Consolidated mode with two code locations fails at plan with the precondition message (deferred from [`land-pr-67`](land-pr-67.md))
+- [x] `tofu validate` passes at root and in each of the three examples
+- [x] CI workflow runs fmt + validate on PR and is green
+- [x] Repo satisfies registry structural requirements (root module, LICENSE, README, `terraform-google-*` name)
+- [x] README documents every `deployment_mode` with its cost floor and break-even
+- [x] No consumer-domain identifiers anywhere in module code or examples
+- [x] Consolidated mode with two code locations fails at plan with the precondition message (deferred from [`land-pr-67`](land-pr-67.md))
 - [ ] `consolidated-starter` example apply-verified in a sandbox project (fractional per-container CPU + startup probes accepted by the Cloud Run API) (deferred from [`land-pr-67`](land-pr-67.md))
 
 ## Risks / unknowns
@@ -62,8 +63,23 @@ Out of scope: `dormant` mode ([`dormant-mode`](dormant-mode.md)), kit templates
 
 ## Notes
 
-(Populated at closeout.)
+- The sandbox-apply criterion stays unchecked: no designated sandbox GCP project
+  exists yet, and consolidated mode remains plan/validate-verified only. Cloud
+  Run enforces fractional-CPU and probe rules at apply.
+- Extraction deltas from the upstream superset: `google-beta` declared in
+  `required_providers` (was implicit via the consumer root — would have broken
+  registry consumers), and an unused `data.google_project` removed, which is
+  also what makes create-only CI plans work offline (no API calls).
+- CI gotcha: `*.tfvars` is gitignored, so the negative-test fixture needed an
+  explicit exception — it was silently absent from the first push and CI
+  failed with "Failed to read variables file". Placeholder-only fixtures need
+  gitignore exceptions.
+- README table lists `dormant` as *(planned)* — flip it when the dormant-mode
+  plan lands.
 
 ## Follow-ups
 
-(Populated at closeout.)
+- Tracked as: consolidated-mode sandbox apply — needs a designated sandbox GCP
+  project; until then the fractional-CPU sizing carries the documented
+  whole-CPU fallback. Revisit at `registry-publish` or first greenfield
+  consumer.
