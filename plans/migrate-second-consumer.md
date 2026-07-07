@@ -1,19 +1,19 @@
 ---
 status: planned
-depends: [registry-publish, dormant-mode]
+depends: [registry-publish, on-demand-mode]
 specs: []
 issues: []
 ---
 
-# Plan: Migrate the second origin deployment to the registry module (dormant candidate)
+# Plan: Migrate the second origin deployment to the registry module (on-demand candidate)
 
 ## Scope
 
 **Cross-repo: executes in the second origin deployment's repo (private).** Replace
 its vendored `tf/modules/dagster/` with the pinned registry module, and evaluate
-flipping the stack to `dormant` mode outside demo windows — a fleet cost review
-measured ~$70/month idle for this demo-shaped deployment, which dormant mode takes
-to ~Cloud-SQL-only.
+flipping the stack to `on-demand` mode — a fleet cost review measured ~$70/month
+idle for this demo-shaped deployment, which on-demand takes to ~Cloud-SQL-only
+while keeping the UI reachable (cold start on first visit, no apply needed to wake).
 
 ## Implements
 
@@ -29,8 +29,9 @@ Consumes this repo's published interface (own `specs:` empty).
    and delete the applied `moved` blocks.
 2. Confirm its private-ingress + path-prefix posture reproduces exactly (a proxying
    service in that stack depends on it).
-3. Propose the dormant-mode flip with the wake procedure documented for demo days;
-   apply if the stack owner accepts.
+3. Propose the on-demand-mode flip (this was the mode's motivating deployment —
+   archiver PR #70 was authored for it); apply if the stack owner accepts. Note
+   the mode change collapses its split resources into the single-instance Service.
 
 ## Validation
 
@@ -39,11 +40,11 @@ Consumes this repo's published interface (own `specs:` empty).
 - [ ] Proxied UI path (private ingress + path prefix) verified working post-migration
 - [ ] HMAC-dependent flows (S3-compatible GCS reads) verified working
 - [ ] Vendored module deleted in the same PR
-- [ ] Dormant-mode decision recorded (adopted or declined, with idle-cost delta)
+- [ ] On-demand-mode decision recorded (adopted or declined, with idle-cost delta)
 
 ## Risks / unknowns
 
-- **Demo timing** — don't migrate or go dormant inside an active demo window;
+- **Demo timing** — don't migrate or flip modes inside an active demo window;
   coordinate with the stack owner.
 
 ## Notes

@@ -1,7 +1,7 @@
 # CLAUDE.md
 
 Terraform module deploying open-source Dagster on Google Cloud Run
-(`split` / `consolidated` / `dormant` topologies). Registry target:
+(`split` / `consolidated` / `on-demand` topologies). Registry target:
 `JarvusInnovations/dagster-cloud-run/google`. See `specs/architecture.md` for the
 full shape and `README.md` for consumer-facing docs.
 

@@ -31,7 +31,7 @@ No specs — distribution work.
    on the published module in production — lead with the cost ladder and the
    three-mode toggle.
 3. Optional follow-on: a Dagster docs deployment-guide PR and/or a short write-up of
-   the split/consolidated/dormant cost ladder.
+   the split/consolidated/on-demand cost ladder.
 
 ## Validation
 

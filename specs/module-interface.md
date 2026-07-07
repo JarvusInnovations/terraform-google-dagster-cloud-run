@@ -5,7 +5,8 @@ outputs. Declarative — what must be true, not how resources implement it.
 
 ## Deployment modes
 
-One `deployment_mode` variable selects the topology. Shared infrastructure (Cloud
+One `deployment_mode` variable selects the topology (`split`, `consolidated`,
+`on-demand`). Shared infrastructure (Cloud
 SQL, buckets, secrets, service accounts, run-worker Jobs) is identical across modes;
 switching modes never touches it.
 
@@ -34,14 +35,22 @@ switching modes never touches it.
 - Webserver and daemon reach the code server at `localhost:3030`; no internal
   code-server Service and no invoker IAM for it exist in this mode.
 
-### `dormant`
+### `on-demand`
 
-- Every Cloud Run resource scaled to zero: daemon Worker Pool at 0 instances,
-  webserver and code servers `min = 0` with request-based billing.
-- No schedules, sensors, or run-queue draining execute while dormant — this is the
-  documented, accepted trade (demo/staging shape).
-- Waking is a mode flip to `split` or `consolidated`; state (Cloud SQL, buckets,
-  secrets) persists across dormancy. Cloud SQL remains the only always-on cost.
+- The **same single-instance topology as `consolidated`** (same Service, same
+  constraints: single code location enforced at plan time, instance-based billing,
+  startup ordering, localhost gRPC) differing in exactly one thing:
+  `min_instance_count = 0`. The instance scales to zero when idle and cold-starts
+  on the next UI request.
+- The daemon runs only while the instance is up (a UI session plus Cloud Run's
+  ~15-minute idle window). Schedules and sensors do not fire unattended — the
+  documented, accepted trade for demo and occasional-manual-run instances.
+- `cpu_idle = false` is retained: Cloud Run scales down on absence of *requests*,
+  not CPU, so while up the daemon has full CPU and reliably drains the run queue —
+  even if the user closes the tab right after launching a run.
+- Launched runs execute in their own Cloud Run Jobs and continue (writing status
+  to Postgres) after the UI instance scales to zero.
+- ~$0/month Cloud Run cost at idle; Cloud SQL remains the only always-on cost.
 
 ### Cost documentation
 
@@ -49,11 +58,12 @@ The README states each mode's always-on floor and the break-even points between
 modes in dollars with assumptions
 ([cost transparency](principles.md#cost-transparency-over-cost-marketing)).
 Consolidated-mode default sizing targets ~1 vCPU total (greenfield starter), not
-parity with a loaded split deployment.
+parity with a loaded split deployment. On-demand shares that sizing; its floor is
+the Cloud SQL instance alone.
 
 ## Ingress postures (webserver)
 
-Exactly one of three, selectable in any non-dormant mode:
+Exactly one of three, selectable in any deployment mode:
 
 1. **IAP** — public ingress gated by Google-managed IAP for a Workspace domain;
    optional custom domain mapping.
