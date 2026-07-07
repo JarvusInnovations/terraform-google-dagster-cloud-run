@@ -1,5 +1,5 @@
 ---
-status: planned
+status: in-progress
 depends: [reconcile-module-drift]
 specs:
   - specs/architecture.md
