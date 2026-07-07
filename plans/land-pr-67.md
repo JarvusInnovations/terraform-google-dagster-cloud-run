@@ -33,11 +33,15 @@ hold this repo's tree to it yet).
    `length(var.code_locations) == 1`.
 3. Fix doc cross-references: `consolidated.tf` cites a DESIGN.md section that lives
    in CLAUDE.md; README lacks `dagster_deployment_mode`.
-4. Resolve image-pin drift before any apply: a 2026-07-07 `tofu plan` wants to
-   downgrade five Cloud Run resources (daemon 0.8.2 → 0.4.13) because CI moves
-   images out-of-band. Add `lifecycle { ignore_changes }` on image fields (per
-   [principles: images move out-of-band](../specs/principles.md#images-move-out-of-band))
-   or reconcile pins.
+4. Resolve image-pin drift before any apply: a 2026-07-07 `tofu plan` wanted to
+   downgrade five Cloud Run resources (daemon 0.8.2 → 0.4.13). *(Amended after
+   investigation:)* the drift source is a stale local tfvars, not out-of-band image
+   movement — the release CI deploys **via `tofu apply` with release-derived image
+   vars**, so `lifecycle ignore_changes` would break CI deploys and must not be
+   added (see the amended principle
+   [Terraform is the image mover](../specs/principles.md#terraform-is-the-image-mover--never-ignore-image-changes)).
+   Fix: reconcile the local tfvars pins to the current release and document the
+   stale-pin hazard in the repo docs.
 5. Right-size `consolidated_resources` defaults toward ~1 vCPU total and document
    the split↔consolidated break-even (per the PR's cost-review comment: 2 vCPU/2.5Gi
    defaults ≈ $105–110/mo is a wash against the measured split floor ≈ $100/mo).
