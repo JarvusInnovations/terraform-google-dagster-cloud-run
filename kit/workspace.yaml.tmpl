@@ -1,0 +1,30 @@
+# Dagster workspace — one gRPC entry per code location.
+#
+# Copy this into your own repo (e.g. deploy/workspace.yaml), replace the
+# `pipeline` placeholder below with your real code location key, then bake
+# the filled-in file into every image target via kit/Containerfile.
+#
+# Key-derivation rule (the module's "workspace coupling rule" — see
+# ../specs/module-interface.md#workspace-coupling-rule): for a code location
+# whose Terraform `code_locations` map key is `<key>`, the module sets an env
+# var named `CODE_SERVER_HOST_<KEY UPPERCASED>` on every component that needs
+# to reach that code server, with the gRPC port fixed at 3030. `location_name`
+# below must equal `<key>` exactly (lowercase, matching the Terraform map
+# key) — it's also the key kit/dagster.yaml.tmpl's `job_name_by_code_location`
+# expects. A mismatch here fails loudly (gRPC connection error, or "No run
+# launcher defined for code location") rather than silently misrouting.
+
+load_from:
+  - grpc_server:
+      host:
+        env: CODE_SERVER_HOST_PIPELINE
+      port: 3030
+      location_name: pipeline
+
+  # Second code location example — repeat this block per entry in your
+  # Terraform code_locations map:
+  # - grpc_server:
+  #     host:
+  #       env: CODE_SERVER_HOST_ANALYTICS
+  #     port: 3030
+  #     location_name: analytics

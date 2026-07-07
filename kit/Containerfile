@@ -1,0 +1,86 @@
+# syntax=docker/dockerfile:1
+#
+# Multi-target Containerfile for a Dagster deployment on Cloud Run.
+# Build targets: webserver, daemon, code-server. Run-worker execution also
+# uses the code-server target — the CloudRunRunLauncher overrides its command
+# per run, so no separate run-worker target exists.
+#
+# The same image set works in every deployment mode (split / consolidated /
+# on-demand): mode is a Terraform concern, never baked in here.
+#
+# This file is deliberately generic — it knows nothing about your pipeline's
+# package layout beyond a `pyproject.toml` / `uv.lock` at the build context
+# root and a `deploy/` directory holding your filled-in copies of
+# kit/dagster.yaml.tmpl and kit/workspace.yaml.tmpl (see kit/README.md for how
+# those get filled in). Copy this file into your own repo next to those, add
+# a `.dockerignore` for anything you don't want in the build context
+# (`.venv/`, `.git/`, tests, etc.), and build.
+
+FROM ghcr.io/astral-sh/uv:python3.12-bookworm-slim AS base
+
+ENV UV_PROJECT_ENVIRONMENT=/usr/local
+ENV UV_COMPILE_BYTECODE=1
+ENV UV_LINK_MODE=copy
+
+WORKDIR /opt/dagster
+
+# Install dependencies first so this layer survives source-only edits.
+COPY pyproject.toml uv.lock ./
+RUN --mount=type=cache,target=/root/.cache/uv \
+    uv sync --frozen --no-install-project
+
+# Copy the rest of the build context (your Dagster package(s), deploy/
+# config) and install the project itself.
+COPY . .
+RUN --mount=type=cache,target=/root/.cache/uv \
+    uv sync --frozen --no-dev
+
+# Dagster instance/workspace config: your filled-in copies of
+# kit/dagster.yaml.tmpl and kit/workspace.yaml.tmpl, with the location-key
+# placeholders replaced for your real code location(s). Runtime values
+# (secrets, project ID, bucket names) stay as env-var placeholders inside
+# those files, resolved by Dagster at process start from vars the Terraform
+# module injects — nothing project-specific is baked in here either.
+RUN mkdir -p /opt/dagster/dagster_home
+COPY deploy/dagster.yaml /opt/dagster/dagster_home/dagster.yaml
+COPY deploy/workspace.yaml /opt/dagster/dagster_home/workspace.yaml
+ENV DAGSTER_HOME=/opt/dagster/dagster_home
+
+
+## WEBSERVER TARGET — serves the Dagster UI.
+FROM base AS webserver
+
+LABEL org.opencontainers.image.description="Dagster webserver"
+
+EXPOSE 3000
+
+CMD ["dagster-webserver", "--host", "0.0.0.0", "--port", "3000"]
+
+
+## DAEMON TARGET — runs schedules, sensors, and the run queue.
+FROM base AS daemon
+
+LABEL org.opencontainers.image.description="Dagster daemon"
+
+CMD ["dagster-daemon", "run"]
+
+
+## CODE SERVER TARGET — serves the gRPC API workspace.yaml connects to.
+## Run workers reuse this image too; the run launcher overrides the command
+## with `dagster api execute_run` args, so DAGSTER_MODULE_NAME below only
+## matters for the code-server role.
+FROM base AS code-server
+
+LABEL org.opencontainers.image.description="Dagster code server"
+
+# Must match both the `module_name` your Terraform code_locations entry
+# declares and the `location_name` in your workspace.yaml. Override at build
+# time instead of editing this file:
+#   docker build --target code-server \
+#     --build-arg DAGSTER_MODULE_NAME=my_pipeline.definitions ...
+ARG DAGSTER_MODULE_NAME=my_pipeline.definitions
+ENV DAGSTER_MODULE_NAME=${DAGSTER_MODULE_NAME}
+
+EXPOSE 3030
+
+CMD dagster api grpc --host 0.0.0.0 --port 3030 --module-name "$DAGSTER_MODULE_NAME"

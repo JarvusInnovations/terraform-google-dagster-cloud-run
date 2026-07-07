@@ -1,0 +1,59 @@
+# Dagster instance configuration.
+#
+# Copy this into your own repo (e.g. deploy/dagster.yaml), replace the
+# `pipeline` placeholder below with your real code location key(s) — the same
+# keys used in your Terraform `code_locations` map and in
+# kit/workspace.yaml.tmpl's `location_name` — then bake the filled-in file
+# into every image target via kit/Containerfile.
+#
+# Runtime values (the secret, project ID, bucket name) stay as Dagster's
+# native `env:` config indirection: nothing here is shell-templated, they
+# resolve from process environment variables the Terraform module sets on
+# each container at deploy time.
+
+storage:
+  postgres:
+    postgres_url:
+      env: DAGSTER_POSTGRES_URL
+
+# Cloud Run run launcher — dagster_contrib_gcp (see
+# https://github.com/dagster-io/community-integrations/tree/main/libraries/dagster-contrib-gcp).
+run_launcher:
+  module: dagster_contrib_gcp.cloud_run.run_launcher
+  class: CloudRunRunLauncher
+  config:
+    project:
+      env: GCP_PROJECT_ID
+    region:
+      env: GCP_REGION
+    job_name_by_code_location:
+      # One entry per code location. The map KEY must be the location's
+      # `location_name` from workspace.yaml — NOT its Dagster module name —
+      # because that's what CloudRunRunLauncher looks up the run's code
+      # location by at launch time. The VALUE is the Cloud Run run-worker Job
+      # name the Terraform module creates, always `dagster-run-worker-<key>`
+      # (see the module's `run_worker_job_names` output).
+      pipeline: dagster-run-worker-pipeline
+      # Second code location example — repeat per entry in your Terraform
+      # code_locations map:
+      # analytics: dagster-run-worker-analytics
+    run_timeout: 86400
+
+run_coordinator:
+  module: dagster.core.run_coordinator
+  class: QueuedRunCoordinator
+  config:
+    max_concurrent_runs: 10
+
+# GCS compute log manager — DAGSTER_LOGS_BUCKET comes from the module's
+# common_env (either your logs_bucket_name or the bucket it creates).
+compute_logs:
+  module: dagster_gcp.gcs.compute_log_manager
+  class: GCSComputeLogManager
+  config:
+    bucket:
+      env: DAGSTER_LOGS_BUCKET
+    prefix: compute_logs
+
+telemetry:
+  enabled: false
