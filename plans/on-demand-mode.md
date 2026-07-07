@@ -1,5 +1,5 @@
 ---
-status: planned
+status: in-progress
 depends: [import-module]
 specs:
   - specs/module-interface.md
