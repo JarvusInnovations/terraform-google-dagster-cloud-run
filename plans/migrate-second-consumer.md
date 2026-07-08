@@ -1,5 +1,5 @@
 ---
-status: planned
+status: in-progress
 depends: [registry-publish, on-demand-mode]
 specs: []
 issues: []
