@@ -33,6 +33,11 @@ Consumes this repo's published interface (own `specs:` empty).
    archiver PR #70 was authored for it); apply if the stack owner accepts. Note
    the mode change collapses its split resources into the single-instance Service.
 
+**Source note**: until the OpenTofu registry submission lands (see
+[`registry-publish`](registry-publish.md) follow-ups), use the explicit host form
+`source = "registry.terraform.io/JarvusInnovations/dagster-cloud-run/google"` —
+the bare source 404s on registry.opentofu.org.
+
 ## Validation
 
 - [ ] `tofu plan` after the swap: no-op or `moved`-explained

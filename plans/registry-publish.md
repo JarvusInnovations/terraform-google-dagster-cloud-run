@@ -1,8 +1,7 @@
 ---
-status: in-progress
+status: done
+pr: null
 depends: [import-module, deployment-kit]
-awaits:
-  - "maintainer runbook execution — tag/release publication and Terraform Registry org sign-in are human-gated acts (permission gate + browser OAuth); see Approach runbook"
 specs:
   - specs/architecture.md
 issues: []
@@ -44,10 +43,10 @@ Out of scope: consumer migrations (downstream plans), announcements
 
 ## Validation
 
-- [ ] Registry page live with docs rendered from the repo
-- [ ] `tofu init` resolves the module by registry source + version from a clean directory
-- [ ] Pre-publish secret/identifier sweep recorded clean
-- [ ] README contains a support-scope statement and pre-1.0 stability caveat
+- [x] Registry page live with docs rendered from the repo
+- [x] `tofu init` resolves the module by registry source + version from a clean directory
+- [x] Pre-publish secret/identifier sweep recorded clean
+- [x] README contains a support-scope statement and pre-1.0 stability caveat
 
 ## Risks / unknowns
 
@@ -56,8 +55,19 @@ Out of scope: consumer migrations (downstream plans), announcements
 
 ## Notes
 
-(Populated at closeout.)
+- No PR — publication was tag + registry flow on main (pr: null).
+- v0.1.0 live on registry.terraform.io as
+  `JarvusInnovations/dagster-cloud-run/google/0.1.0`; consumption verified from a
+  clean directory (`tofu init` downloads 0.1.0, `tofu validate` passes).
+- **Two-registry nuance discovered at verification**: OpenTofu resolves bare
+  registry sources against registry.opentofu.org, a separately-indexed registry —
+  the bare source 404s there until the module is submitted (opentofu/registry
+  issue form; automation opens the PR and then indexes all GitHub tags). Until
+  that lands, tofu consumers use the explicit host form:
+  `source = "registry.terraform.io/JarvusInnovations/dagster-cloud-run/google"`.
 
 ## Follow-ups
 
-(Populated at closeout.)
+- Tracked as: OpenTofu registry submission (opentofu/registry module issue form) —
+  makes the bare source resolve for tofu users; both migration plans note the
+  explicit-host workaround until then.

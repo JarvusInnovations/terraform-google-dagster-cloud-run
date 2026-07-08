@@ -27,6 +27,11 @@ changes).
    ([`reconcile-module-drift`](reconcile-module-drift.md)) in the root module.
 3. `tofu plan` must be no-op / moved-only; apply; delete `tf/modules/dagster/`.
 
+**Source note**: until the OpenTofu registry submission lands (see
+[`registry-publish`](registry-publish.md) follow-ups), use the explicit host form
+`source = "registry.terraform.io/JarvusInnovations/dagster-cloud-run/google"` —
+the bare source 404s on registry.opentofu.org.
+
 ## Validation
 
 - [ ] `tofu plan` after the source swap: no resource churn (no-op or `moved`-explained)
