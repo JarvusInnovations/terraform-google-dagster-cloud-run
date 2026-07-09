@@ -14,7 +14,7 @@ serverless, no GKE cluster, no VMs.
 | Dagster daemon | Worker Pool (singleton) |
 | Code server(s) | Service per code location (internal gRPC, port 3030) |
 | Run workers | Job per code location, launched per-run by [`dagster-contrib-gcp`](https://github.com/dagster-io/community-integrations/tree/main/libraries/dagster-contrib-gcp)'s `CloudRunRunLauncher` |
-| Run/event storage | Database + user in a Cloud SQL Postgres instance you provide |
+| Run/event storage | Database + user in a Cloud SQL Postgres instance you provide — or bring an externally-provisioned database (`manage_database = false` + `db_password`, e.g. a multi-tenant shared instance) |
 
 The module also creates per-code-location service accounts with least-privilege
 IAM, Secret Manager plumbing for the Postgres URL, a compute-logs bucket, and
