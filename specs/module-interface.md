@@ -34,6 +34,12 @@ switching modes never touches it.
   time via precondition ([modes are rungs, not forks](principles.md#modes-are-rungs-not-forks)).
 - Webserver and daemon reach the code server at `localhost:3030`; no internal
   code-server Service and no invoker IAM for it exist in this mode.
+- The Cloud SQL socket is provided by an explicit Cloud SQL Auth Proxy sidecar
+  over a shared in-memory volume — Cloud Run's managed Cloud SQL volume does not
+  function in multi-container services (empirically: the API silently keeps the
+  mount on only one container and the socket never materializes), and the
+  working v1 annotation path is not settable through the v2 API. Single-container
+  split services keep the managed volume.
 
 ### `on-demand`
 
