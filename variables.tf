@@ -139,9 +139,14 @@ variable "deployment_mode" {
   }
 }
 
-# Per-container resource limits for the consolidated deployment.
-# The instance total is the SUM across the three containers and must resolve to a
-# supported Cloud Run CPU size. Defaults sum to 1 vCPU / 2.5Gi.
+# Per-container resource limits for the consolidated/on-demand deployment.
+# Two Cloud Run API rules bind here (learned at apply, not plan — see the
+# apply-verification notes in plans/):
+#   1. Always-allocated CPU (cpu_idle = false) requires the INSTANCE TOTAL
+#      (sum across containers) to be >= 1 vCPU.
+#   2. Per-container CPU<->memory coupling: 0.25 vCPU allows at most 512Mi;
+#      1Gi memory needs >= 0.5 vCPU.
+# Defaults sum to exactly 1 vCPU / 2Gi and satisfy both.
 #
 # Cost break-even (us-central1, always-allocated, no CUD): a consolidated instance
 # runs ~$55/mo at the 1 vCPU default but ~$105-110/mo at 2 vCPU / 2.5Gi — the
@@ -159,9 +164,9 @@ variable "consolidated_resources" {
     code_server = object({ cpu = string, memory = string })
   })
   default = {
-    webserver   = { cpu = "500m", memory = "512Mi" }
-    code_server = { cpu = "250m", memory = "1Gi" }
-    daemon      = { cpu = "250m", memory = "1Gi" } # matches split's daemon memory; 512Mi risks OOM loops
+    webserver   = { cpu = "250m", memory = "512Mi" } # startup boost covers UI load; size up if sluggish
+    code_server = { cpu = "500m", memory = "1Gi" }   # heavy definition imports need the memory (1Gi requires >= 0.5 vCPU)
+    daemon      = { cpu = "250m", memory = "512Mi" } # 0.25 vCPU caps memory at 512Mi; size up long-term for busy schedulers
   }
 }
 
