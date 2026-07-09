@@ -1,8 +1,13 @@
-# Database password - randomly generated
+# Database password - randomly generated, unless supplied externally
+# (manage_database = false / shared-instance tenancy)
 resource "random_password" "db_password" {
   length           = 32
   special          = true
   override_special = "_-" # Conservative set safe for connection strings
+}
+
+locals {
+  effective_db_password = var.db_password != null ? var.db_password : random_password.db_password.result
 }
 
 # Store database password in Secret Manager
@@ -19,7 +24,7 @@ resource "google_secret_manager_secret" "db_password" {
 
 resource "google_secret_manager_secret_version" "db_password" {
   secret      = google_secret_manager_secret.db_password.id
-  secret_data = random_password.db_password.result
+  secret_data = local.effective_db_password
 }
 
 # Full PostgreSQL connection URL for Unix socket connections
@@ -37,5 +42,5 @@ resource "google_secret_manager_secret" "postgres_url" {
 
 resource "google_secret_manager_secret_version" "postgres_url" {
   secret      = google_secret_manager_secret.postgres_url.id
-  secret_data = "postgresql://${var.db_user}:${random_password.db_password.result}@/${var.db_name}?host=${local.db_socket_path}"
+  secret_data = "postgresql://${var.db_user}:${local.effective_db_password}@/${var.db_name}?host=${local.db_socket_path}"
 }
