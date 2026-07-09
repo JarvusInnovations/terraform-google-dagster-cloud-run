@@ -64,7 +64,7 @@ across modes.
 | Mode | Shape | Always-on floor* |
 | --- | --- | --- |
 | `split` (default) | Webserver Service (0→N) + daemon Worker Pool + code-server Service per location | ~$100/mo in practice: the always-on daemon (~$64) keeps the "scale-to-zero" code server permanently warm (~30s gRPC polls) |
-| `consolidated` | Webserver + daemon + code server as three containers in **one** always-on Service; single code location only (enforced at plan time) | ~$55/mo at the default 1 vCPU / 2.5Gi sizing |
+| `consolidated` | Webserver + daemon + code server as three containers in **one** always-on Service; single code location only (enforced at plan time) | ~$65–70/mo at the default 1.25 vCPU / 2.25Gi sizing (incl. the Cloud SQL Auth Proxy sidecar) |
 | `on-demand` | Same single-instance topology as `consolidated`, but `min = 0` — scales to zero when idle, cold-starts on the next UI visit; schedules/sensors only fire while awake | ~$0/mo Cloud Run at idle; Cloud SQL remains |
 
 \* us-central1, instance-based billing, no committed-use discount. **Break-even:

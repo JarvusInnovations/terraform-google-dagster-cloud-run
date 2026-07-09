@@ -146,10 +146,14 @@ variable "deployment_mode" {
 #      (sum across containers) to be >= 1 vCPU.
 #   2. Per-container CPU<->memory coupling: 0.25 vCPU allows at most 512Mi;
 #      1Gi memory needs >= 0.5 vCPU.
-# Defaults sum to exactly 1 vCPU / 2Gi and satisfy both.
+# Defaults (incl. the cloudsql-proxy sidecar, consolidated_proxy_resources) sum
+# to 1.25 vCPU / 2.25Gi — non-integer totals >1 are accepted (probed) — and
+# satisfy both rules: ~$65-70/mo always-allocated, still well under the ~$100/mo
+# split idle floor.
 #
 # Cost break-even (us-central1, always-allocated, no CUD): a consolidated instance
-# runs ~$55/mo at the 1 vCPU default but ~$105-110/mo at 2 vCPU / 2.5Gi — the
+# runs ~$65-70/mo at the 1.25 vCPU default (incl. proxy sidecar) but ~$105-110/mo
+# at 2 vCPU / 2.5Gi — the
 # latter is a wash against a loaded split deployment's idle floor (~$100/mo:
 # always-on daemon + daemon-kept-warm code server). Consolidation only *saves*
 # money at roughly <=1.5 vCPU total; above that it's a topology simplification,
@@ -309,4 +313,19 @@ variable "db_password" {
   type        = string
   sensitive   = true
   default     = null
+}
+
+variable "cloud_sql_proxy_image" {
+  description = "Cloud SQL Auth Proxy image for the consolidated/on-demand sidecar. Pin a specific version for reproducible deploys."
+  type        = string
+  default     = "gcr.io/cloud-sql-connectors/cloud-sql-proxy:2.23.0"
+}
+
+variable "consolidated_proxy_resources" {
+  description = "Resource limits for the Cloud SQL Auth Proxy sidecar in consolidated/on-demand mode. Counts toward the instance-total >= 1 vCPU rule."
+  type = object({
+    cpu    = optional(string, "250m")
+    memory = optional(string, "256Mi")
+  })
+  default = {}
 }
