@@ -121,6 +121,15 @@ silently break Terraform-mediated deploys). The corollary: an apply with stale
 image variables **rolls your deployment back** — always pass current image
 versions, or keep tfvars pins in sync with your latest release.
 
+## Cross-project shared instances
+
+With `manage_database = false` against an instance in another project, grant
+`roles/cloudsql.client` **on the instance's project** to the primary Dagster SA
+*and every per-location run-worker SA* (see `run_worker_service_account_emails`
+output). The module can only grant within its own project. A missing run-worker
+grant surfaces as runs stuck in STARTING with "socket: No such file or directory"
+in the worker logs — the 403 appears only in the job's Cloud SQL proxy logs.
+
 ## Provider requirements
 
 `google` and `google-beta` ≥ 7.0 (several resources — IAP, Worker Pools, the

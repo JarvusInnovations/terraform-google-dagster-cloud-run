@@ -121,6 +121,14 @@ In both modes the module owns the `dagster-db-password` / `dagster-postgres-url`
 secrets consumed by every component; the `database_name` output falls back to
 `var.db_name` in external mode.
 
+When the instance lives in a **different project** than the deployment (the
+shared-instance pattern), `roles/cloudsql.client` on the *instance's* project is
+required for the primary SA **and every per-location run-worker SA** — the module
+grants it only in its own project and cannot reach across. Missing run-worker
+grants fail late and opaquely: runs stick in STARTING while the worker Job dies
+on "socket: No such file or directory" (the underlying 403 is only visible in
+the job's proxy logs).
+
 ## Images
 
 Image variables are ordinary, fully-managed inputs — no `lifecycle ignore_changes`
