@@ -67,8 +67,10 @@ resource "google_cloud_run_v2_service" "consolidated" {
     # services (the API silently keeps the mount on one container and the
     # socket never materializes — see specs/module-interface.md), so an
     # explicit Cloud SQL Auth Proxy sidecar below writes the socket here.
+    # NOTE: the volume NAME "cloudsql" is reserved by the API for managed Cloud
+    # SQL volumes; only the mount path /cloudsql is ours to choose.
     volumes {
-      name = "cloudsql"
+      name = "pg-socket"
       empty_dir {
         medium     = "MEMORY"
         size_limit = "32Mi"
@@ -90,7 +92,7 @@ resource "google_cloud_run_v2_service" "consolidated" {
       ]
 
       volume_mounts {
-        name       = "cloudsql"
+        name       = "pg-socket"
         mount_path = "/cloudsql"
       }
 
@@ -130,7 +132,7 @@ resource "google_cloud_run_v2_service" "consolidated" {
       ]
 
       volume_mounts {
-        name       = "cloudsql"
+        name       = "pg-socket"
         mount_path = "/cloudsql"
       }
 
@@ -198,7 +200,7 @@ resource "google_cloud_run_v2_service" "consolidated" {
       )
 
       volume_mounts {
-        name       = "cloudsql"
+        name       = "pg-socket"
         mount_path = "/cloudsql"
       }
 
@@ -272,7 +274,7 @@ resource "google_cloud_run_v2_service" "consolidated" {
       command = ["dagster-daemon", "run"]
 
       volume_mounts {
-        name       = "cloudsql"
+        name       = "pg-socket"
         mount_path = "/cloudsql"
       }
 
