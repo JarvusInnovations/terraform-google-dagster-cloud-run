@@ -148,7 +148,7 @@ variable "deployment_mode" {
 #      1Gi memory needs >= 0.5 vCPU.
 # Defaults (incl. the cloudsql-proxy sidecar, consolidated_proxy_resources) sum
 # to 1.25 vCPU / 2.25Gi — non-integer totals >1 are accepted (probed) — and
-# satisfy both rules: ~\$65-70/mo always-allocated, still well under the ~\$100/mo
+# satisfy both rules: ~$65-70/mo always-allocated, still well under the ~$100/mo
 # split idle floor.
 #
 # Cost break-even (us-central1, always-allocated, no CUD): a consolidated instance
