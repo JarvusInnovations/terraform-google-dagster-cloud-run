@@ -96,6 +96,25 @@ contract: the kit templates (`specs/deployment-kit.md`) generate matching
 `workspace.yaml` entries from the same location keys, and the module README states
 the rule. A mismatch fails loudly in docs/examples rather than silently in gRPC.
 
+## Database
+
+The module targets a Cloud SQL Postgres instance the consumer provides
+(`cloud_sql_connection_name`) and supports two database-provisioning modes:
+
+- **Managed (default, `manage_database = true`)** — the module creates the
+  database and a SQL user in the instance via the Admin API and generates the
+  password.
+- **External (`manage_database = false`)** — the database and user are
+  provisioned outside the module (e.g. a multi-tenant shared instance whose
+  root creates isolated tenant databases and SQL-native users; API-created
+  users carry `cloudsqlsuperuser`, which would pierce tenant isolation). The
+  consumer passes `db_password` (sensitive) and the module only composes the
+  connection URL and its Secret Manager plumbing.
+
+In both modes the module owns the `dagster-db-password` / `dagster-postgres-url`
+secrets consumed by every component; the `database_name` output falls back to
+`var.db_name` in external mode.
+
 ## Images
 
 Image variables are ordinary, fully-managed inputs — no `lifecycle ignore_changes`
