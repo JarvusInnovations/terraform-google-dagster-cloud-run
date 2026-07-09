@@ -62,18 +62,65 @@ resource "google_cloud_run_v2_service" "consolidated" {
       max_instance_count = 1
     }
 
-    # Cloud SQL volume mount for Unix socket connection (shared by all containers)
+    # Shared in-memory volume carrying the Cloud SQL Unix socket. Cloud Run's
+    # managed cloud_sql_instance volume does NOT function in multi-container
+    # services (the API silently keeps the mount on one container and the
+    # socket never materializes — see specs/module-interface.md), so an
+    # explicit Cloud SQL Auth Proxy sidecar below writes the socket here.
     volumes {
       name = "cloudsql"
-      cloud_sql_instance {
-        instances = [var.cloud_sql_connection_name]
+      empty_dir {
+        medium     = "MEMORY"
+        size_limit = "32Mi"
       }
     }
 
-    # --- Code server (gRPC; started first via container dependency) ---
+    # --- Cloud SQL Auth Proxy (sidecar; started first, provides the socket) ---
     containers {
-      name  = "code-server"
-      image = local.consolidated_location.image
+      name  = "cloudsql-proxy"
+      image = var.cloud_sql_proxy_image
+
+      args = [
+        "--unix-socket", "/cloudsql",
+        "--health-check",
+        "--http-address", "0.0.0.0",
+        "--http-port", "9801",
+        "--structured-logs",
+        var.cloud_sql_connection_name,
+      ]
+
+      volume_mounts {
+        name       = "cloudsql"
+        mount_path = "/cloudsql"
+      }
+
+      resources {
+        limits = {
+          cpu    = var.consolidated_proxy_resources.cpu
+          memory = var.consolidated_proxy_resources.memory
+        }
+        cpu_idle          = false
+        startup_cpu_boost = true
+      }
+
+      # /startup returns 200 once the proxy is ready to serve connections.
+      startup_probe {
+        http_get {
+          path = "/startup"
+          port = 9801
+        }
+        initial_delay_seconds = 0
+        timeout_seconds       = 5
+        period_seconds        = 5
+        failure_threshold     = 24
+      }
+    }
+
+    # --- Code server (gRPC; starts after the proxy, before webserver/daemon) ---
+    containers {
+      name       = "code-server"
+      image      = local.consolidated_location.image
+      depends_on = ["cloudsql-proxy"]
 
       command = [
         "dagster", "api", "grpc",
@@ -142,7 +189,7 @@ resource "google_cloud_run_v2_service" "consolidated" {
     containers {
       name       = "webserver"
       image      = var.webserver_image
-      depends_on = ["code-server"]
+      depends_on = ["cloudsql-proxy", "code-server"]
 
       # --path-prefix mirrors webserver.tf (reverse-proxy subpath support)
       command = concat(
@@ -220,7 +267,7 @@ resource "google_cloud_run_v2_service" "consolidated" {
     containers {
       name       = "daemon"
       image      = var.daemon_image
-      depends_on = ["code-server"]
+      depends_on = ["cloudsql-proxy", "code-server"]
 
       command = ["dagster-daemon", "run"]
 
