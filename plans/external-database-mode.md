@@ -1,5 +1,6 @@
 ---
-status: in-progress
+status: done
+pr: 4
 depends: [registry-publish]
 specs:
   - specs/module-interface.md
@@ -31,10 +32,10 @@ output falls back to `var.db_name`, new `manage_database` + sensitive
 
 ## Validation
 
-- [ ] `tofu validate` clean at root and in all examples
-- [ ] Offline plan with `manage_database = false` + `db_password` set creates no `google_sql_database`/`google_sql_user` and no other delta vs managed mode
-- [ ] Existing consumers unaffected by default (`manage_database = true` plans unchanged)
-- [ ] v0.2.0 tagged and resolvable from the registry
+- [x] `tofu validate` clean at root and in all examples
+- [x] Offline plan with `manage_database = false` + `db_password` set creates no `google_sql_database`/`google_sql_user` and no other delta vs managed mode
+- [x] Existing consumers unaffected by default (`manage_database = true` plans unchanged)
+- [x] v0.2.0 tagged and resolvable from the registry
 
 ## Risks / unknowns
 
@@ -44,8 +45,12 @@ output falls back to `var.db_name`, new `manage_database` + sensitive
 
 ## Notes
 
-(Populated at closeout.)
+- v0.2.0 was immediately followed the same day by v0.2.1/v0.3.0/v0.3.1 (sizing
+  coupling, Auth Proxy sidecar, reserved volume name) from the first production
+  apply — see the migrate-second-consumer closeout for the full account.
+- Cross-project grant requirement (cloudsql.client on the instance's project for
+  primary + run-worker SAs) documented in README/spec after it bit in production.
 
 ## Follow-ups
 
-(Populated at closeout.)
+None.
