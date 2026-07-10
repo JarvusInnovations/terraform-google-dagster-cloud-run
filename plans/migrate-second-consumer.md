@@ -1,5 +1,6 @@
 ---
-status: in-progress
+status: done
+pr: null
 depends: [registry-publish, on-demand-mode]
 specs: []
 issues: []
@@ -40,12 +41,12 @@ the bare source 404s on registry.opentofu.org.
 
 ## Validation
 
-- [ ] `tofu plan` after the swap: no-op or `moved`-explained
-- [ ] Image-management posture decided and recorded: Terraform-mediated deploys (pass current image vars at apply) vs. gcloud-mediated with documented plan noise (deferred from [`reconcile-module-drift`](reconcile-module-drift.md))
-- [ ] Proxied UI path (private ingress + path prefix) verified working post-migration
-- [ ] HMAC-dependent flows (S3-compatible GCS reads) verified working
-- [ ] Vendored module deleted in the same PR
-- [ ] On-demand-mode decision recorded (adopted or declined, with idle-cost delta)
+- [x] `tofu plan` after the swap: no-op or `moved`-explained
+- [x] Image-management posture decided and recorded: Terraform-mediated deploys (pass current image vars at apply) vs. gcloud-mediated with documented plan noise (deferred from [`reconcile-module-drift`](reconcile-module-drift.md))
+- [x] Proxied UI path (private ingress + path prefix) verified working post-migration
+- [x] HMAC-dependent flows (S3-compatible GCS reads) verified working
+- [x] Vendored module deleted in the same PR
+- [x] On-demand-mode decision recorded (adopted or declined, with idle-cost delta)
 
 ## Risks / unknowns
 
@@ -54,8 +55,30 @@ the bare source 404s on registry.opentofu.org.
 
 ## Notes
 
-(Populated at closeout.)
+- Landed across udda PRs #134/#137/#138/#139 (pr: null — multi-PR migration) and
+  module releases v0.2.0→v0.3.1, all in one recovery-driven day. The flip was the
+  module's first real single-instance apply and surfaced four apply-time-only
+  Cloud Run rules (sizing coupling, ≥1 vCPU always-allocated total, managed
+  Cloud SQL volume non-functional in multicontainer → Auth Proxy sidecar,
+  reserved "cloudsql" volume name) — each encoded upstream.
+- Also surfaced: the shared-pg cutover had granted cloudsql.client to primary
+  SAs only; both run-worker SAs granted imperatively (Chris-authorized,
+  2026-07-09). Failure signature documented in the module README.
+- Image posture decision: kept gcloud-mediated CI deploys; variable defaults
+  synced to the deployed tags at migration (0.20.1) so local plans stay quiet
+  until the next release rots them again — acceptable for a low-touch stack.
+- Wake test: workspace over localhost gRPC ✓; authenticated /dagster proxy 200 ✓;
+  materialization + HMAC dbt seed run SUCCESS via run-worker Jobs ✓;
+  scale-to-zero confirmed with a measured **69.5s cold wake** after 25 min idle
+  (~300ms warm). Idle Cloud Run cost now ~$0 (shared Cloud SQL tenant remains).
+- CDPHE bid was lost (2026-07-09), which removed the demo-window constraint and
+  motivated the immediate flip.
 
 ## Follow-ups
 
-(Populated at closeout.)
+- Tracked as: the imperative cloudsql.client grants for both run-worker SAs need
+  a durable home in the infra-ops shared-postgres config (cross-referenced in
+  the HQ open-source-infrastructure timeline).
+- Tracked as: document/measure the on-demand cold wake (~70s) in the module
+  README; in-process code loading as a future optimization is already noted on
+  the on-demand-mode plan.
