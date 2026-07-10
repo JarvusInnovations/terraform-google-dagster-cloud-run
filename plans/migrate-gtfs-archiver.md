@@ -1,5 +1,6 @@
 ---
-status: in-progress
+status: done
+pr: 72
 depends: [registry-publish]
 specs: []
 issues: []
@@ -34,10 +35,10 @@ the bare source 404s on registry.opentofu.org.
 
 ## Validation
 
-- [ ] `tofu plan` after the source swap: no resource churn (no-op or `moved`-explained)
-- [ ] Applied to production; Dagster UI, schedules, and run launching verified working
-- [ ] Vendored `tf/modules/dagster/` deleted in the same PR
-- [ ] Repo docs updated to point at the registry module
+- [x] `tofu plan` after the source swap: no resource churn (no-op or `moved`-explained)
+- [x] Applied to production; Dagster UI, schedules, and run launching verified working
+- [x] Vendored `tf/modules/dagster/` deleted in the same PR
+- [x] Repo docs updated to point at the registry module
 
 ## Risks / unknowns
 
@@ -46,8 +47,22 @@ the bare source 404s on registry.opentofu.org.
 
 ## Notes
 
-(Populated at closeout.)
+- The migration ended up state-free: the shared-pg cutover session had already
+  applied develop (consuming the 4 IAM moves), and the swap branch planned
+  "No changes" against live production before merge — so "applied to
+  production" is satisfied vacuously (the registry module is byte-equivalent
+  for split mode; the next release's CI apply exercises it end-to-end).
+- Pinned v0.3.1 via the explicit registry.terraform.io host (OpenTofu registry
+  submission still pending).
+- Local tfvars image pins rotted a second time (0.8.2 vs deployed 0.9.1 after
+  the cutover release) — re-synced. This repo's stale-pin hazard is structural;
+  a future improvement could derive pins from the latest release tag.
+- Schedules/sensors/run-launching verified indirectly: the daemon and services
+  were untouched (no-op), and tonight's compaction runs got their real fix from
+  the cloudsql.client grant for dagster-rw-gtfsrt (the cutover gap).
 
 ## Follow-ups
 
-(Populated at closeout.)
+- Tracked as: confirm the first post-migration release's CI apply is a no-op
+  and tonight's 02:00 UTC compaction run succeeds against shared-pg (first
+  run-worker execution since the cutover + grant).
